@@ -10,7 +10,55 @@ class ReservationController extends Controller
 {
     public function index(Request $request)
     {
-        return $request->user()->reservations;
+        $reservations = $request->user()->reservations()
+            ->with(['wishlistItem.wishlist.user'])
+            ->get();
+
+        return response()->json([
+            'data' => $reservations->map(function ($reservation) {
+                $item = $reservation->wishlistItem;
+                $wishlist = $item?->wishlist;
+                $owner = $wishlist?->user;
+
+                return [
+                    'id' => $reservation->id,
+                    'wishlist_item_id' => $reservation->wishlist_item_id,
+                    'wishlist_id' => $wishlist?->id,
+                    'user_id' => $reservation->user_id,
+                    'status' => $reservation->status,
+                    'note' => $reservation->note,
+                    'created_at' => $reservation->created_at,
+                    'updated_at' => $reservation->updated_at,
+
+                    'wishlist_item' => $item ? [
+                        'id' => $item->id,
+                        'wishlist_id' => $item->wishlist_id,
+                        'name' => $item->name,
+                        'price' => $item->price,
+                        'link' => $item->link,
+                        'image' => $item->image,
+                        'description' => $item->description,
+                        'category' => $item->category,
+                        'priority' => $item->priority,
+                        'created_at' => $item->created_at,
+                        'updated_at' => $item->updated_at,
+                    ] : null,
+
+                    'wishlist' => $wishlist ? [
+                        'id' => $wishlist->id,
+                        'name' => $wishlist->name,
+                        'description' => $wishlist->description,
+                        'privacy' => $wishlist->privacy,
+                    ] : null,
+
+                    'wishlist_owner' => $owner ? [
+                        'id' => $owner->id,
+                        'name' => $owner->name,
+                        'avatar' => $owner->avatar,
+                    ] : null,
+                ];
+            })
+        ]);
     }
 
     public function store(Request $request)
@@ -21,34 +69,41 @@ class ReservationController extends Controller
             'note' => 'nullable|string',
         ]);
 
-        $item = WishlistItem::find($validated['wishlist_item_id']);
+        $item = \App\Models\WishlistItem::find($validated['wishlist_item_id']);
 
-        // Проверяем доступ к вишлисту
         if (!$this->canAccessWishlist($request->user(), $item->wishlist)) {
             abort(403);
         }
 
-        // Нельзя резервировать свой подарок (опционально)
+        // нельзя резервировать свой подарок
         if ($item->wishlist->user_id === $request->user()->id) {
             abort(403, 'Нельзя резервировать свой подарок');
         }
 
-        // Проверяем, нет ли уже резерва
+        // проверяем, нет ли уже резерва
         if ($item->reservations()->where('user_id', $request->user()->id)->exists()) {
             abort(409, 'Уже зарезервировано');
         }
 
+        // создаем бронь
         $reservation = $item->reservations()->create([
             'user_id' => $request->user()->id,
             'status' => $validated['status'] ?? 'reserved',
-            'note' => $validated['note'],
+            'note' => $validated['note'] ?? null,
         ]);
 
-        // Уведомление владельцу (пример)
-        // $item->wishlist->user->notify(new ReservationNotification($reservation));
+        // создаем уведомление владельцу вишлиста
+        \App\Models\Notification::create([
+            'user_id' => $item->wishlist->user_id,
+            'type' => 'reservation',
+            'message' => $request->user()->name . " забронировал подарок \"{$item->name}\"",
+            'related_id' => $reservation->id,
+            'is_read' => false,
+        ]);
 
         return response()->json($reservation, 201);
     }
+
 
     public function show(Request $request, Reservation $reservation)
     {

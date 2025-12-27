@@ -10,7 +10,7 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        return $request->user()->notifications()->latest()->get();
+        return $request->user()->notifications()->latest()->paginate(20);
     }
 
     public function show(Request $request, Notification $notification)
@@ -44,5 +44,11 @@ class NotificationController extends Controller
 
         $notification->delete();
         return response()->json(['message' => 'Уведомление удалено']);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $request->user()->notifications()->where('is_read', false)->update(['is_read' => true]);
+        return response()->json(['message' => 'Все уведомления отмечены прочитанными']);
     }
 }

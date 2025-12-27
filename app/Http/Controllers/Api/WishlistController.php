@@ -12,7 +12,6 @@ class WishlistController extends Controller
     public function index(Request $request)
     {
         $wishlists = $request->user()->wishlists;
-        // ЕДИНЫЙ ФОРМАТ ОТВЕТА
         return response()->json(['data' => $wishlists]);
     }
 

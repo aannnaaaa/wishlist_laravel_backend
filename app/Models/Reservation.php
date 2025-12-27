@@ -17,7 +17,7 @@ class Reservation extends Model
     ];
 
     protected $casts = [
-        'status' => 'string',  // Для enum
+        'status' => 'string',
     ];
 
     // Отношения

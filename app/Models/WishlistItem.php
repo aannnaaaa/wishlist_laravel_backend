@@ -25,23 +25,21 @@ class WishlistItem extends Model
         'priority' => 'string',
     ];
 
-    // Автоматически добавлять эти поля в JSON
     protected $appends = ['is_reserved', 'reserved_by_user_id'];
 
-    // Аксессор для проверки резервации
+    // аксессор для проверки резервации
     public function getIsReservedAttribute()
     {
         return $this->reservations()->exists();
     }
 
-    // Аксессор для получения ID пользователя, который зарезервировал
+    // аксессор для получения id пользователя который зарезервировал
     public function getReservedByUserIdAttribute()
     {
         $reservation = $this->reservations()->first();
         return $reservation ? $reservation->user_id : null;
     }
 
-    // Отношения
     public function wishlist()
     {
         return $this->belongsTo(Wishlist::class);

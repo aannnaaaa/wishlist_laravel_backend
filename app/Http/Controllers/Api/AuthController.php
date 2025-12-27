@@ -57,13 +57,12 @@ class AuthController extends Controller
         return response()->json(['message' => 'Успешный выход']);
     }
 
-    // Получение текущего пользователя
+
     public function user(Request $request)
     {
         return response()->json(['user' => $request->user()]);
     }
 
-    // Обновление профиля
     public function updateProfile(Request $request)
     {
         $user = $request->user();

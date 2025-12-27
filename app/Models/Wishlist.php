@@ -17,7 +17,7 @@ class Wishlist extends Model
     ];
 
     protected $casts = [
-        'privacy' => 'string',  // Для enum
+        'privacy' => 'string',
     ];
 
     // Отношения

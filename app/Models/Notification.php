@@ -22,7 +22,6 @@ class Notification extends Model
         'type' => 'string',  // Для enum
     ];
 
-    // Отношения
     public function user()
     {
         return $this->belongsTo(User::class);
